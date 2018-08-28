@@ -54,7 +54,7 @@ useful than it is. It often causes unexpected race patterns.
 An `expect` operation which waits for a string matching a [regular
 expression][] to appear on the shell output (either `stdout` or
 `stderr`). If no matching output does appear within the timeout
-period, the test case is considered as failed. See the `--timeout`
+period, the test case is considered as failed. See the `--match_timeout`
 option. See also the `--flush_timeout` and `--poll_timeout`
 configuration parameters about customizing the `?` behavior.
 
@@ -344,7 +344,7 @@ by setting the `--multiplier` parameter to `2000` all timeouts will be
 doubled. The resulting timeout value affects how long time `expect`
 operations will wait before reporting failure. If the time is omitted
 like `[timeout]`, the timeout is reset to the default timeout
-specified with the `--timeout` configuration parameter. The timeout
+specified with the `--match_timeout` configuration parameter. The timeout
 value `infinity` means infinity.
 
 **\[sleep Seconds\]**  
@@ -363,7 +363,7 @@ assigns a value to a [configuration parameter](#config_params). The
 assignment takes place during parsing of the script file. The
 configuration parameters in **architecture specific files** can be
 overridden by **command line options**. For example `[config
-timeout=2000]` can be overridden with `--timeout=4000`.  Explicit
+timeout=2000]` can be overridden with `--match_timeout=4000`.  Explicit
 `[config Var=Value]` settings in scripts takes however precedence over
 settings in architecture specific files and command line options. See
 the section *Configuration parameters* about valid configuration

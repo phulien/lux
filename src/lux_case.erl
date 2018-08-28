@@ -268,7 +268,7 @@ config_type(Name) ->
             {ok, #istate.flush_timeout, [{integer, 0, infinity}]};
         poll_timeout ->
             {ok, #istate.poll_timeout, [{integer, 0, infinity}]};
-        timeout ->
+        match_timeout ->
             {ok, #istate.default_timeout, [{integer, 0, infinity},
                                            {atom, [infinity]}]};
         cleanup_timeout ->
@@ -728,7 +728,7 @@ user_config_keys() ->
      case_timeout,
      flush_timeout,
      poll_timeout,
-     timeout,
+     match_timeout,
      cleanup_timeout,
      newshell,
      shell_wrapper,

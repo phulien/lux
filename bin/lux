@@ -130,6 +130,7 @@ specs() ->
      {"-D",                   ["--internal_debug"]},
      {"-E",                   ["--event_trace"]},
      {"-T",                   ["--suite_trace"]},
+     {"--timeout", fun(Val) -> ["--match_timeout=" ++ Val] end},
      {?FILES,                 "",          string,                 mandatory},
      {"--help",               usage,       {enum, help},           optional},
      {"--version",            false,       boolean,                none},
@@ -173,7 +174,7 @@ specs() ->
      {"--case_timeout",       5*60*1000,   {integer, 0, infinity}, mandatory},
      {"--flush_timeout",      1000,        {integer, 0, infinity}, mandatory},
      {"--poll_timeout",       100,         {integer, 0, infinity}, mandatory},
-     {"--timeout",            10*1000,     {integer, 0, infinity}, mandatory},
+     {"--match_timeout",      10*1000,     {integer, 0, infinity}, mandatory},
      {"--cleanup_timeout",    100*1000,    {integer, 0, infinity}, mandatory},
      {"--newshell"     ,      false,       boolean,                none},
      {"--shell_wrapper",      "",          string,                 optional},
@@ -383,7 +384,7 @@ usage(Specs, LuxAppDir) ->
     1.
 
 do_usage(Specs0, LuxAppDir, usage) ->
-    Specs = [{"--make", false, boolean, none}] ++ Specs0,
+    Specs = lists:keysort(1, [{"--make", false, boolean, none} | Specs0]),
     io:format("usage: ~s [OPTION]... [FILE]...\n", [script_base_name()]),
     P = fun(Atom) -> [H | T] = atom_to_list(Atom), [string:to_upper(H) | T] end,
     PrettyType = fun(Type) ->
@@ -395,6 +396,8 @@ do_usage(Specs0, LuxAppDir, usage) ->
                  end,
     Pretty = fun(Spec) ->
                      case Spec of
+                         {Short, Transform} when is_function(Transform, 1) ->
+                             io:format("\t~s ~s\n", [Short, "deprecated"]);
                          {Short, Opts} -> % alias
                              Long = lists:flatten([[O, " "] || O <- Opts]),
                              io:format("\t~s short for ~s\n", [Short, Long]);
@@ -1249,7 +1252,7 @@ translate_opts([
      {"--case_timeout",       CaseTimeout},
      {"--flush_timeout",      FlushTimeout},
      {"--poll_timeout",       PollTimeout},
-     {"--timeout",            ExpectTimeout},
+     {"--match_timeout",      MatchTimeout},
      {"--cleanup_timeout",    CleanupTimeout},
      {"--newshell",           NewShell},
      {"--shell_wrapper",      ShellWrapper},
@@ -1278,7 +1281,7 @@ translate_opts([
          {case_timeout,       CaseTimeout},
          {flush_timeout,      FlushTimeout},
          {poll_timeout,       PollTimeout},
-         {timeout,            ExpectTimeout},
+         {match_timeout,      MatchTimeout},
          {cleanup_timeout,    CleanupTimeout},
          {newshell,           NewShell},
          {shell_wrapper,      ShellWrapper},
@@ -1366,6 +1369,8 @@ getopt([?FILES | Args], _Specs) ->
 getopt([Arg | Args], Specs) when hd(Arg) =:= $- ->
     {Val, Spec} = find_spec(Arg, Specs),
     case Spec of
+        {_Short, Transform} when is_function(Transform, 1) ->
+            getopt(Transform(Val) ++ Args, Specs);
         {_Short, Long} ->
             getopt(Long ++ Args, Specs);
         {Name, Default, Type, Presence} ->
@@ -1468,22 +1473,22 @@ validate(Name, Val, Type, Presence) ->
             badarg(Name, Val, Type)
     end.
 
-find_spec(Opt, Specs) ->
+find_spec(Arg, Specs) ->
     {Name, Val} =
-        case lists:prefix("--", Opt) of
+        case lists:prefix("--", Arg) of
             true ->
                 %% --name=val
                 Eq = $=,
-                case lists:splitwith(fun(Char) -> Char =/= Eq end, Opt) of
+                case lists:splitwith(fun(Char) -> Char =/= Eq end, Arg) of
                     {N, [Eq | V]} -> {N, V};
                     {N, []}       -> {N, undefined}
                 end;
             false ->
-                {Opt, undefined}
+                {Arg, undefined}
         end,
-    %% io:format("Option ~p: ~p -> ~p\n~p\n", [Opt, Name, Val, Specs]),
+    %% io:format("Option ~p: ~p -> ~p\n~p\n", [Arg, Name, Val, Specs]),
     case lists:keyfind(Name, 1, Specs) of
-        false -> badarg(Opt);
+        false -> badarg(Arg);
         Spec  -> {Val, Spec}
     end.
 

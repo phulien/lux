@@ -226,7 +226,7 @@ the context for the test case(s), such as subsystem or test suite.
 Timeouts
 --------
 
-**--timeout Timeout**  
+**--match\_timeout Timeout**  
 The script expects the shell output to match given
 [regular expression][]s. But the output must be received within a
 given time limit. The `Timeout` specifies how long it will wait before
