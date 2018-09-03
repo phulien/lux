@@ -50,17 +50,21 @@ main(OrigArgs) ->
         end,
     safe_halt(ExitCode).
 
-dispatch([{files, Files}, {prev_log_dir, PrevLogDir} | Opts],
+dispatch([{files, Files},
+          {prev_log_dir, PrevLogDir},
+          {user_log_dir, UserLogDir} | Opts],
          _LuxAppDir, _OpModes, _Specs, OrigArgs) ->
-    run(Opts, Files, PrevLogDir, OrigArgs);
+    run(Opts, Files, UserLogDir, PrevLogDir, OrigArgs);
 dispatch(Opts, LuxAppDir, OpModes, Specs, OrigArgs) ->
     case select_op(Opts, OpModes) of
         {Op, Args} ->
             do_dispatch(Op, Opts, LuxAppDir, OpModes, Specs, Args, OrigArgs);
         undefined ->
             case add_defaults(Opts) of
-                {ok, [{files, Files}, {prev_log_dir, PrevLogDir} | Opts2]} ->
-                    run(Opts2, Files, PrevLogDir, OrigArgs);
+                {ok, [{files, Files},
+                      {prev_log_dir, PrevLogDir},
+                      {user_log_dir, UserLogDir} | Opts2]} ->
+                    run(Opts2, Files, UserLogDir, PrevLogDir, OrigArgs);
                 {error, Format, Args} ->
                     io:format(Format, Args),
                     1
@@ -284,7 +288,9 @@ do_add_defaults(Files, Opts) ->
                               lists:keystore(Tag, 1, Acc, Opt)
                       end,
             Opts2 = lists:foldl(Replace, Opts, MoreOpts),
-            {ok, [{files, Files}, {prev_log_dir, PrevLogDir} | Opts2]};
+            {ok, [{files, Files},
+                  {prev_log_dir, PrevLogDir},
+                  {user_log_dir, UserLogDir}  | Opts2]};
         summary_log_exists ->
             {error,
              "ERROR: Summary log file already exists: ~s\n",
@@ -1169,8 +1175,8 @@ safe_history(LogDirs, HtmlFile, Opts) ->
             {error, File, Reason}
     end.
 
-run(Opts, Files, PrevLogDir, OrigArgs) ->
-    case do_run(Files, Opts, PrevLogDir, OrigArgs) of
+run(Opts, Files, UserLogDir, PrevLogDir, OrigArgs) ->
+    case do_run(Files, Opts, UserLogDir, PrevLogDir, OrigArgs) of
         ok -> % HTML
             Summary = success,
             ok;
@@ -1184,13 +1190,14 @@ run(Opts, Files, PrevLogDir, OrigArgs) ->
     end,
     exit_code(Summary).
 
-do_run(Files, Opts, PrevLogDir, OrigArgs) ->
+do_run(Files, Opts, UserLogDir, PrevLogDir, OrigArgs) ->
     case is_html(Files) of
         true ->
             lux_html_parse:validate_html(hd(Files), Opts);
         false ->
             ThisEscript = escript:script_name(),
-            lux_suite:run(Files, Opts, PrevLogDir, [ThisEscript | OrigArgs])
+            lux_suite:run(Files, Opts, UserLogDir, PrevLogDir,
+                          [ThisEscript | OrigArgs])
     end.
 
 is_html(Files) ->

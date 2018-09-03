@@ -7,29 +7,22 @@
 
 -module(lux_suite).
 
--export([run/4, args_to_opts/3, annotate_log/3]).
+-export([run/5, args_to_opts/3, annotate_log/3]).
 
 -include("lux.hrl").
 -include_lib("kernel/include/file.hrl").
 
-adjust_files(R) ->
-    RelFiles = R#rstate.files,
-    TagFiles = [{config_dir, R#rstate.config_dir} |
-                [{file, F} || F <- RelFiles]],
-    lists:foreach(fun check_file/1, TagFiles), % May throw error
-    AbsFiles = [lux_utils:normalize_filename(F) || F <- RelFiles],
-    R#rstate{files = AbsFiles}.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Run a test suite
 
--spec(run(filename(), opts(), string(), [string()]) ->
+-spec(run(filename(), opts(), string(), string(), [string()]) ->
              {ok, summary(), filename(), [result()]} | error() | no_input()).
 
-run(Files, Opts, PrevLogDir, OrigArgs) when is_list(Files) ->
+run(Files, Opts, UserLogDir, PrevLogDir, OrigArgs) when is_list(Files) ->
     R0 = #rstate{files = Files,
                  orig_files = Files,
                  orig_args = OrigArgs,
+                 user_log_dir = UserLogDir,
                  prev_log_dir = PrevLogDir},
     case parse_ropts(Opts, R0) of
         {ok, R}
@@ -79,6 +72,14 @@ run(Files, Opts, PrevLogDir, OrigArgs) when is_list(Files) ->
         {error, File, ArgErr} ->
             {error, File, ArgErr}
     end.
+
+adjust_files(R) ->
+    RelFiles = R#rstate.files,
+    TagFiles = [{config_dir, R#rstate.config_dir} |
+                [{file, F} || F <- RelFiles]],
+    lists:foreach(fun check_file/1, TagFiles), % May throw error
+    AbsFiles = [lux_utils:normalize_filename(F) || F <- RelFiles],
+    R#rstate{files = AbsFiles}.
 
 doc_run(R) ->
     R2 = R#rstate{log_fd = undefined, summary_log = undefined},

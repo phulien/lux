@@ -309,6 +309,7 @@
         {files                      :: [string()],
          orig_files                 :: [string()],
          orig_args                  :: [string()],
+         user_log_dir               :: undefined | string(),
          prev_log_dir               :: undefined | string(),
          mode = execute             :: lux:run_mode(),
          skip_unstable = false      :: boolean(),
