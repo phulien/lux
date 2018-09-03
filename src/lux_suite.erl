@@ -142,12 +142,15 @@ list_files(R, File) ->
             Fun = fun(F, Acc) -> [F | Acc] end,
             RegExp = R#rstate.file_pattern,
             Files = lux_utils:fold_files(File, RegExp, true, Fun, []),
-            {ok, lists:sort(Files)};
+            {ok, sort_files(Files)};
         {ok, _} ->
             {ok, [File]};
         {error, Reason} ->
             {error, Reason}
     end.
+
+sort_files(Files) ->
+    lists:usort(Files).
 
 full_run(#rstate{progress = Progress} = R, ConfigData, SummaryLog) ->
     ExtendRun = R#rstate.extend_run,
@@ -352,7 +355,7 @@ compute_rerun_files2(R, [LogDir|LogDirs], LogBase, Acc, WWW) ->
     Files = filter_rerun_files(R, LatestRes),
     compute_rerun_files2(R, LogDirs, LogBase, Files ++ Acc, NewWWW);
 compute_rerun_files2(R, [], _LogBase, Acc, WWW) ->
-    {R#rstate{files = lists:usort(Acc)}, WWW}.
+    {R#rstate{files = sort_files(Acc)}, WWW}.
 
 filter_rerun_files(R, InitialRes) ->
     MinCond = lux_utils:summary_prio(R#rstate.rerun),
@@ -771,11 +774,11 @@ run_cases(R, [], Summary, Results, _Max, _CC, List, _Opaque) ->
     case R#rstate.mode of
         list ->
             [io:format("~s\n", [File]) ||
-                File <- lists:usort(List2)];
+                File <- sort_files(List2)];
         list_dir ->
             List3 = [filename:dirname(File) || File <- List2],
             [io:format("~s\n", [File]) ||
-                File <- lists:usort(List3)];
+                File <- sort_files(List3)];
         _ ->
             ok
     end,
