@@ -506,6 +506,7 @@ p(Int, Len) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Verbatim match
+
 verbatim_match(<<>>, _Expected) ->
     nomatch;
 verbatim_match(_Actual, <<>>) ->
@@ -513,12 +514,20 @@ verbatim_match(_Actual, <<>>) ->
 verbatim_match(Actual, Expected) ->
     verbatim_search(Actual, Expected, Expected, 0).
 
-verbatim_normalize(<<"\r\n", Rest/binary>>) ->
-    {1, <<"\n", Rest/binary>>};
-verbatim_normalize(<<"\r", Rest/binary>>) ->
-    {0, <<"\n", Rest/binary>>};
-verbatim_normalize(Rest) ->
-    {0, Rest}.
+verbatim_normalize(Bin) ->
+    verbatim_normalize2(Bin, 0).
+
+verbatim_normalize2(<<"\r", Rest/binary>>, Pos) ->
+    case Rest of
+        <<"\r", _/binary>> ->  % Skip one carriage return
+            verbatim_normalize2(Rest, Pos+1);
+        <<"\n", _/binary>> ->  % Skip one carriage return
+            {Pos+1, Rest};
+        _ ->                   % Replace one carriage return with a newline
+            {Pos, <<"\n", Rest/binary>>}
+    end;
+verbatim_normalize2(Rest, Pos) ->
+    {Pos, Rest}.
 
 verbatim_search(Actual, Expected, Orig, Pos) ->
     {Add, Actual2} = verbatim_normalize(Actual),
